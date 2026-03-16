@@ -701,8 +701,14 @@ function cycleDay(dateStr) {
                 );
                 if (result === null) return; // cancelled — no change
                 if (result.trim() === '') {
-                    // Empty note = remove the weekend work day
-                    dayData.approved = false;
+                    // Empty note = fully clear this day back to blank weekend
+                    delete days[dateStr];
+                    addLogEntry({ action: 'clear', date: dateStr, oldValue: oldApproved, newValue: null });
+                    debouncedSave();
+                    updateAllDisplays();
+                    renderCalendarFromOffset();
+                    renderInspector();
+                    return;
                 } else {
                     // Update the note, stay approved
                     dayData.notes = result.trim();
