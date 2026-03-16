@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>225-Day Work Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ============================================================
+         AUTH SCREEN
+         ============================================================ -->
+    <div id="auth-screen" class="auth-screen">
+        <div class="auth-card">
+            <h1>225-Day Work Tracker</h1>
+            <p class="subtitle">OC AI Forward | Sign in with your OCDE account</p>
+            <button class="btn-google" id="btn-sign-in">
+                <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                Sign in with Google
+            </button>
+            <p class="auth-error" id="auth-error"></p>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         MAIN APP
+         ============================================================ -->
+    <div id="app" class="app">
+        <header>
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>225-Day Work Tracker</h1>
+                    <div class="subtitle">OC AI Forward | Personal Work Tracking</div>
+                </div>
+                <div class="header-right">
+                    <div class="sync-status" id="sync-status">
+                        <span class="sync-dot"></span>
+                        <span class="sync-text">All changes saved</span>
+                    </div>
+                    <div class="user-info" id="user-info"></div>
+                    <button class="btn-sign-out" id="btn-sign-out">Sign Out</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-container">
+            <!-- Progress Strip -->
+            <div class="progress-strip">
+                <div class="progress-header">
+                    <div class="progress-stat">
+                        <div class="stat-label">Days Worked</div>
+                        <div class="stat-value" id="days-worked">0</div>
+                        <div class="stat-subtext">Toward 225-day requirement</div>
+                    </div>
+                    <div class="progress-stat">
+                        <div class="stat-label">Days Remaining</div>
+                        <div class="stat-value" id="days-remaining">225</div>
+                        <div class="stat-subtext">To reach June 30, 2026</div>
+                    </div>
+                    <div class="progress-stat">
+                        <div class="stat-label">Progress</div>
+                        <div class="stat-value" id="progress-percent">0%</div>
+                        <div class="stat-subtext">Of 225-day target</div>
+                    </div>
+                    <div class="progress-stat">
+                        <div class="stat-label">Days Until Deadline</div>
+                        <div class="stat-value" id="days-until-deadline">--</div>
+                        <div class="stat-subtext">June 30, 2026</div>
+                    </div>
+                    <div class="progress-stat">
+                        <div class="stat-label">Status</div>
+                        <div class="stat-value" id="status-display" style="font-size: 18px;">Loading...</div>
+                        <div class="stat-subtext">Pace toward deadline</div>
+                    </div>
+                </div>
+
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+
+                <div class="warning-banner" id="warning-banner"></div>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+                <button class="tab-btn" data-tab="calendar">Calendar</button>
+                <button class="tab-btn" data-tab="data">Data Management</button>
+                <button class="tab-btn" data-tab="inspector">Data Inspector</button>
+            </div>
+
+            <!-- Dashboard Tab -->
+            <div id="tab-dashboard" class="tab-content active">
+                <div class="dashboard-card">
+                    <h2>Work Day Breakdown</h2>
+                    <div class="summary-grid" id="summary-grid"></div>
+                </div>
+                <div class="dashboard-card">
+                    <h2>Legend</h2>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #D1FAE5; border-color: var(--success);"></div>
+                            <span>Approved Work Day</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #FEF3C7; border-color: var(--warning);"></div>
+                            <span>Pending Review</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #DBEAFE; border-color: var(--info);"></div>
+                            <span>Flex (4-hr)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #D4D4FF; border-color: #8B5CF6;"></div>
+                            <span>Flex (8-hr)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #E0E7FF; border-color: #6366F1;"></div>
+                            <span>Federal Holiday</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #F3F4F6; border-color: #D1D5DB;"></div>
+                            <span>Day Off / Vacation</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #FDE2E4; border-color: #DC2626;"></div>
+                            <span>Weekend Work</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #E5E7EB; border-color: #9CA3AF;"></div>
+                            <span>Locked (submitted)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar Tab -->
+            <div id="tab-calendar" class="tab-content">
+                <div id="calendar-container"></div>
+            </div>
+
+            <!-- Data Management Tab -->
+            <div id="tab-data" class="tab-content">
+                <div class="data-section">
+                    <h2>Import & Export</h2>
+                    <div class="action-buttons">
+                        <div>
+                            <button class="btn-primary" id="btn-import">Import Flex Calendar (.xlsx)</button>
+                            <input type="file" id="file-input" accept=".xlsx">
+                        </div>
+                        <button class="btn-secondary" id="btn-export">Export Data (JSON)</button>
+                        <button class="btn-secondary" id="btn-apply-holidays">Apply Federal Holidays</button>
+                        <button class="btn-outline" id="btn-clear" style="color: var(--error);">Clear All Data</button>
+                    </div>
+
+                    <!-- Import Preview -->
+                    <div class="import-preview" id="import-preview">
+                        <h3>Import Preview (first 10 rows)</h3>
+                        <p style="font-size: 13px; color: #666; margin-bottom: var(--sp-sm);">
+                            Review the parsed data below. Click "Confirm Import" to save to your account.
+                        </p>
+                        <div id="import-preview-table"></div>
+                        <div class="import-actions">
+                            <button class="btn-success" id="btn-confirm-import">Confirm Import</button>
+                            <button class="btn-outline" id="btn-cancel-import">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-section">
+                    <h3>Manual Day Entry</h3>
+                    <p style="font-size: 13px; color: #666; margin-bottom: var(--sp-md);">Add or modify a specific work day</p>
+                    <div class="manual-entry">
+                        <input type="date" id="manual-date">
+                        <select id="manual-type">
+                            <option value="work-day">Work Day</option>
+                            <option value="flex-8">Flex 8-hr</option>
+                            <option value="flex-4">Flex 4-hr</option>
+                            <option value="weekend-work">Weekend Work</option>
+                            <option value="off-day">Day Off</option>
+                        </select>
+                        <button class="btn-success" id="btn-add-day">Add Day</button>
+                    </div>
+                </div>
+
+                <div class="data-section">
+                    <h3>Lock Month</h3>
+                    <p style="font-size: 13px; color: #666; margin-bottom: var(--sp-md);">
+                        Lock a month after submitting to HR. Locked days cannot be edited.
+                    </p>
+                    <div class="lock-controls">
+                        <select id="lock-month-select"></select>
+                        <button class="btn-secondary" id="btn-lock-month">Lock Month</button>
+                        <button class="btn-outline btn-sm" id="btn-unlock-month">Unlock Month</button>
+                    </div>
+                </div>
+
+                <div class="data-section">
+                    <h3>Undo History</h3>
+                    <div id="undo-stack">
+                        <p style="color: #999; font-size: 13px;">No recent actions to undo</p>
+                    </div>
+                    <button class="btn-outline" id="btn-undo" style="margin-top: var(--sp-md); display: none;">Undo Last Action</button>
+                </div>
+            </div>
+
+            <!-- Data Inspector Tab -->
+            <div id="tab-inspector" class="tab-content">
+                <div class="data-section">
+                    <h2>Data Inspector</h2>
+                    <div class="inspector-controls">
+                        <select id="filter-month">
+                            <option value="all">All Months</option>
+                        </select>
+                        <select id="filter-type">
+                            <option value="all">All Types</option>
+                            <option value="weekday">Weekday</option>
+                            <option value="work-day">Work Day</option>
+                            <option value="flex-8">Flex 8-hr</option>
+                            <option value="flex-4">Flex 4-hr</option>
+                            <option value="weekend-work">Weekend Work</option>
+                            <option value="off-day">Day Off</option>
+                            <option value="vacation">Vacation</option>
+                            <option value="holiday">Federal Holiday</option>
+                        </select>
+                        <select id="filter-status">
+                            <option value="all">All Statuses</option>
+                            <option value="approved">Approved</option>
+                            <option value="pending">Pending</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div class="inspector-wrapper">
+                        <table class="inspector-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Day</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Notes</th>
+                                    <th>Locked</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inspector-body"></tbody>
+                        </table>
+                    </div>
+                    <p style="font-size: 12px; color: #999; margin-top: var(--sp-sm);" id="inspector-count"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK (compat mode for simplicity) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+    <!-- SheetJS for xlsx parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- App Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
