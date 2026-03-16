@@ -690,18 +690,18 @@ function cycleDay(dateStr) {
     } else {
         oldApproved = dayData.approved;
 
-        // Weekend-work days get a special flow: click to edit note or remove
-        if (isWeekend && dayData.type === 'weekend-work') {
+        if (isWeekend) {
+            // ALL weekend days use the same note-driven flow, regardless of stored type
             if (dayData.approved === true) {
-                // Already approved weekend-work — let user edit note or remove
+                // Currently a work day — let user edit note or clear to remove
                 const currentNote = dayData.notes || '';
                 const result = prompt(
-                    `Weekend work: ${dateStr}\nCurrent note: "${currentNote}"\n\nEdit note below, or clear it and click OK to remove this day:`,
+                    `Weekend work: ${dateStr}\nCurrent note: "${currentNote}"\n\nEdit note (or clear and click OK to remove this day):`,
                     currentNote
                 );
                 if (result === null) return; // cancelled — no change
                 if (result.trim() === '') {
-                    // Empty note = fully clear this day back to blank weekend
+                    // Cleared — fully delete back to blank weekend
                     delete days[dateStr];
                     addLogEntry({ action: 'clear', date: dateStr, oldValue: oldApproved, newValue: null });
                     debouncedSave();
@@ -710,13 +710,15 @@ function cycleDay(dateStr) {
                     renderInspector();
                     return;
                 } else {
-                    // Update the note, stay approved
+                    // Updated note — stay approved as weekend-work
+                    dayData.type = 'weekend-work';
                     dayData.notes = result.trim();
                 }
             } else {
-                // Re-approving a previously removed weekend-work day
-                const note = prompt(`Re-adding weekend work for ${dateStr}.\nWhat is this day for?`, dayData.notes || '');
-                if (note === null) return;
+                // Not currently a work day (off, null, wrong type) — prompt to add as work
+                const note = prompt(`Add weekend work for ${dateStr}.\nWhat is this day for?`, dayData.notes || '');
+                if (note === null) return; // cancelled
+                dayData.type = 'weekend-work';
                 dayData.approved = true;
                 dayData.notes = note.trim();
             }
