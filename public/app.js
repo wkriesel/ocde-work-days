@@ -664,6 +664,54 @@ function getTypeShortLabel(type) {
 }
 
 // ============================================================
+// WEEKEND NOTE MODAL
+// ============================================================
+
+function showWeekendModal({ dateStr, currentNote = '', isEditing = false, onSave, onRemove }) {
+    const modal    = document.getElementById('weekend-modal');
+    const titleEl  = document.getElementById('wm-title');
+    const dateEl   = document.getElementById('wm-date');
+    const noteEl   = document.getElementById('wm-note');
+    const saveBtn  = document.getElementById('wm-save');
+    const cancelBtn= document.getElementById('wm-cancel');
+    const removeBtn= document.getElementById('wm-remove');
+
+    titleEl.textContent  = isEditing ? 'Edit Weekend Work' : 'Add Weekend Work';
+    dateEl.textContent   = dateStr;
+    noteEl.value         = currentNote;
+    removeBtn.style.display = isEditing ? 'inline-block' : 'none';
+
+    modal.style.display = 'flex';
+    setTimeout(() => noteEl.focus(), 50);
+
+    function close() {
+        modal.style.display = 'none';
+        saveBtn.onclick   = null;
+        cancelBtn.onclick = null;
+        removeBtn.onclick = null;
+        noteEl.onkeydown  = null;
+    }
+
+    saveBtn.onclick = () => {
+        const note = noteEl.value.trim();
+        close();
+        onSave(note);
+    };
+
+    cancelBtn.onclick = () => close();
+
+    removeBtn.onclick = () => {
+        close();
+        if (onRemove) onRemove();
+    };
+
+    noteEl.onkeydown = (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); }
+        if (e.key === 'Escape') cancelBtn.click();
+    };
+}
+
+// ============================================================
 // DAY CYCLING (calendar click)
 // ============================================================
 
@@ -675,66 +723,62 @@ function cycleDay(dateStr) {
     const dateObj = new Date(dateStr + 'T00:00:00');
     const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
 
+    if (isWeekend) {
+        // All weekend clicks go through the modal
+        const isEditing = !!(dayData && dayData.approved === true);
+        const currentNote = (dayData && dayData.notes) || '';
+
+        showWeekendModal({
+            dateStr,
+            currentNote,
+            isEditing,
+            onSave: (note) => {
+                const oldApproved = dayData ? dayData.approved : undefined;
+                // Upsert as weekend-work with whatever note they typed (including empty)
+                days[dateStr] = {
+                    type: 'weekend-work',
+                    approved: true,
+                    notes: note,
+                    source: 'manual',
+                    locked: false
+                };
+                addLogEntry({ action: 'cycle', date: dateStr, oldValue: oldApproved, newValue: true });
+                debouncedSave();
+                updateAllDisplays();
+                renderCalendarFromOffset();
+                renderInspector();
+            },
+            onRemove: () => {
+                const oldApproved = dayData ? dayData.approved : undefined;
+                delete days[dateStr];
+                addLogEntry({ action: 'clear', date: dateStr, oldValue: oldApproved, newValue: null });
+                debouncedSave();
+                updateAllDisplays();
+                renderCalendarFromOffset();
+                renderInspector();
+            }
+        });
+        return; // modal handles the rest asynchronously
+    }
+
+    // ── Normal weekday cycling ──
     let oldApproved;
 
     if (!dayData) {
-        if (isWeekend) {
-            // Weekend — prompt for note, then create as weekend-work
-            const note = prompt(`Adding weekend work for ${dateStr}.\nWhat is this day for?`);
-            if (note === null) return; // user cancelled
-            days[dateStr] = { type: 'weekend-work', approved: true, notes: note.trim(), source: 'manual', locked: false };
-        } else {
-            days[dateStr] = { type: 'work-day', approved: true, notes: '', source: 'manual', locked: false };
-        }
+        days[dateStr] = { type: 'work-day', approved: true, notes: '', source: 'manual', locked: false };
         oldApproved = undefined;
     } else {
         oldApproved = dayData.approved;
-
-        if (isWeekend) {
-            // ALL weekend days use the same note-driven flow, regardless of stored type
-            if (dayData.approved === true) {
-                // Currently a work day — let user edit note or clear to remove
-                const currentNote = dayData.notes || '';
-                const result = prompt(
-                    `Weekend work: ${dateStr}\nCurrent note: "${currentNote}"\n\nEdit note (or clear and click OK to remove this day):`,
-                    currentNote
-                );
-                if (result === null) return; // cancelled — no change
-                if (result.trim() === '') {
-                    // Cleared — fully delete back to blank weekend
-                    delete days[dateStr];
-                    addLogEntry({ action: 'clear', date: dateStr, oldValue: oldApproved, newValue: null });
-                    debouncedSave();
-                    updateAllDisplays();
-                    renderCalendarFromOffset();
-                    renderInspector();
-                    return;
-                } else {
-                    // Updated note — stay approved as weekend-work
-                    dayData.type = 'weekend-work';
-                    dayData.notes = result.trim();
-                }
-            } else {
-                // Not currently a work day (off, null, wrong type) — prompt to add as work
-                const note = prompt(`Add weekend work for ${dateStr}.\nWhat is this day for?`, dayData.notes || '');
-                if (note === null) return; // cancelled
-                dayData.type = 'weekend-work';
-                dayData.approved = true;
-                dayData.notes = note.trim();
-            }
-        } else {
-            // Normal weekday cycle: null -> true -> false -> null
-            if (dayData.approved === null) dayData.approved = true;
-            else if (dayData.approved === true) dayData.approved = false;
-            else dayData.approved = null;
-        }
+        if (dayData.approved === null) dayData.approved = true;
+        else if (dayData.approved === true) dayData.approved = false;
+        else dayData.approved = null;
     }
 
     addLogEntry({
         action: 'cycle',
         date: dateStr,
         oldValue: oldApproved,
-        newValue: days[dateStr].approved
+        newValue: days[dateStr] ? days[dateStr].approved : null
     });
 
     debouncedSave();
